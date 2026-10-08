@@ -1,7 +1,8 @@
-password = "admin123"
+import os
+password = os.environ.get("PASSWORD")
+
 
 def divide(a, b):
+    if b == 0:
+        raise ValueError("b must not be zero")
     return a / b
-
-result = divide(10, 0)
-print("result: " + str(result))
