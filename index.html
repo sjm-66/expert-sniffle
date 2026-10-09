@@ -44,6 +44,11 @@ font-weight:600}
 button:disabled{
 background:#2ea04355;
 color:#8b949e}
+.btn2{background:#21262d;
+color:#8b949e;
+font-size:14px;
+padding:10px;
+font-weight:400}
 .tag{font-size:13px;
 padding:8px 12px;
 border-radius:8px;
@@ -54,6 +59,8 @@ color:#7ee787}
 color:#ffa198}
 .wait{background:#27405c;
 color:#79c0ff}
+.old{background:#3b2e58;
+color:#d2a8ff}
 pre{background:#0d1117;
 border:1px solid #30363d;
 border-radius:8px;
@@ -72,16 +79,20 @@ margin-top:8px}
 <h1>🔍 AI 代码审查</h1>
 <div class="card">
 <label>① DeepSeek API Key
-（只存你手机里，不上传）</label>
+（已自动记住）</label>
 <input type="password" id="key"
 placeholder="sk-...">
-<label>② 要审查的代码</label>
+<label>② 要审查的代码
+（自动保存，刷新不丢）</label>
 <textarea id="code"
 placeholder="粘贴代码到这里">
 </textarea>
 <button id="btn">开始审查</button>
+<button id="clr" class="btn2">
+🗑 清空代码和结果</button>
 <div class="tip">约 10~30 秒出结果，
-费用走你自己的 Key</div>
+代码和结果都存在你手机本地
+</div>
 </div>
 <div id="out"></div>
 <script>
@@ -96,15 +107,39 @@ var B=document
 .getElementById('btn');
 var O=document
 .getElementById('out');
+function esc(s){return s
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;')}
 K.value=localStorage
 .getItem('ds_key')||'';
 K.onchange=function(){
 localStorage.setItem(
 'ds_key',K.value.trim())};
-function esc(s){return s
-.replace(/&/g,'&amp;')
-.replace(/</g,'&lt;')
-.replace(/>/g,'&gt;')}
+C.value=localStorage
+.getItem('ds_code')||'';
+C.oninput=function(){
+localStorage.setItem(
+'ds_code',C.value)};
+var last=localStorage
+.getItem('ds_result');
+if(last){
+O.innerHTML=
+'<div class="tag old">'
++'📌 上次的审查结果（'
++localStorage.getItem(
+'ds_time')+'）</div><pre>'
++esc(last)+'</pre>'}
+document.getElementById('clr')
+.onclick=function(){
+localStorage.removeItem(
+'ds_code');
+localStorage.removeItem(
+'ds_result');
+localStorage.removeItem(
+'ds_time');
+C.value='';O.innerHTML='';
+alert('已清空')};
 B.onclick=function(){
 var key=K.value.trim();
 var code=C.value.trim();
@@ -156,12 +191,22 @@ throw new Error('HTTP '
 +r.status)}
 return r.json()})
 .then(function(d){
+var txt=d.choices[0]
+.message.content;
+var now=new Date();
+var t=now.getHours()+':'
++now.getMinutes();
+localStorage.setItem(
+'ds_code',code);
+localStorage.setItem(
+'ds_result',txt);
+localStorage.setItem(
+'ds_time',t);
 O.innerHTML=
 '<div class="tag ok">'
-+'✅ 审查完成</div><pre>'
-+esc(d.choices[0]
-.message.content)
-+'</pre>'})
++'✅ 审查完成（已保存，'
++'刷新不丢）</div><pre>'
++esc(txt)+'</pre>'})
 .catch(function(e){
 var h='';
 if(e instanceof TypeError)
