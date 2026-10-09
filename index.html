@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1">
+<title>AI 代码审查</title>
+<style>
+*{box-sizing:border-box;
+margin:0;padding:0}
+body{font-family:sans-serif;
+background:#0d1117;
+color:#e6edf3;padding:16px;
+max-width:720px;margin:0 auto}
+h1{font-size:22px;
+margin:8px 0 16px}
+.card{background:#161b22;
+border:1px solid #30363d;
+border-radius:10px;
+padding:16px;
+margin-bottom:16px}
+label{display:block;
+font-size:14px;
+color:#8b949e;
+margin:12px 0 6px}
+input,textarea{width:100%;
+background:#0d1117;
+color:#e6edf3;
+border:1px solid #30363d;
+border-radius:8px;
+padding:12px;font-size:15px}
+textarea{min-height:180px;
+font-family:monospace;
+resize:vertical}
+button{width:100%;
+margin-top:16px;
+padding:14px;
+background:#238636;
+color:#fff;border:none;
+border-radius:8px;
+font-size:16px;
+font-weight:600}
+button:disabled{
+background:#2ea04355;
+color:#8b949e}
+.tag{font-size:13px;
+padding:8px 12px;
+border-radius:8px;
+margin-bottom:10px}
+.ok{background:#1b4721;
+color:#7ee787}
+.err{background:#5c1a1a;
+color:#ffa198}
+.wait{background:#27405c;
+color:#79c0ff}
+pre{background:#0d1117;
+border:1px solid #30363d;
+border-radius:8px;
+padding:12px;
+white-space:pre-wrap;
+word-break:break-word;
+font-size:14px;
+line-height:1.6;
+margin-top:10px}
+.tip{font-size:12px;
+color:#8b949e;
+margin-top:8px}
+</style>
+</head>
+<body>
+<h1>🔍 AI 代码审查</h1>
+<div class="card">
+<label>① DeepSeek API Key
+（只存你手机里，不上传）</label>
+<input type="password" id="key"
+placeholder="sk-...">
+<label>② 要审查的代码</label>
+<textarea id="code"
+placeholder="粘贴代码到这里">
+</textarea>
+<button id="btn">开始审查</button>
+<div class="tip">约 10~30 秒出结果，
+费用走你自己的 Key</div>
+</div>
+<div id="out"></div>
+<script>
+var API='https://api.deepseek.com'
++'/chat/completions';
+var MODEL='deepseek-v4-flash';
+var K=document
+.getElementById('key');
+var C=document
+.getElementById('code');
+var B=document
+.getElementById('btn');
+var O=document
+.getElementById('out');
+K.value=localStorage
+.getItem('ds_key')||'';
+K.onchange=function(){
+localStorage.setItem(
+'ds_key',K.value.trim())};
+function esc(s){return s
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;')}
+B.onclick=function(){
+var key=K.value.trim();
+var code=C.value.trim();
+if(!key||!code){
+alert('先填 Key 并粘贴代码');
+return}
+localStorage.setItem(
+'ds_key',key);
+B.disabled=true;
+B.textContent='审查中…';
+O.innerHTML=
+'<div class="tag wait">'
++'⏳ AI 正在阅读代码…</div>';
+fetch(API,{method:'POST',
+headers:{
+'Content-Type':
+'application/json',
+'Authorization':
+'Bearer '+key},
+body:JSON.stringify({
+model:MODEL,
+temperature:0.2,
+messages:[
+{role:'system',content:
+'你是资深代码审查专家，'
++'用中文回复。从 Bug、'
++'安全漏洞、性能、可读性'
++'四个角度审查代码。'
++'每个问题按「位置/问题/'
++'修改建议」三行列出；'
++'没有问题就只回复：'
++'✅ 代码没有发现问题'},
+{role:'user',content:
+'请审查这段代码：\n'+code}
+]})})
+.then(function(r){
+if(!r.ok){
+if(r.status==401)throw
+new Error('Key 无效(401)，'
++'检查是否复制完整');
+if(r.status==402)throw
+new Error('余额不足(402)，'
++'去 platform.deepseek.com'
++'充值');
+if(r.status==429)throw
+new Error('太频繁(429)，'
++'一分钟后再试');
+throw new Error('HTTP '
++r.status)}
+return r.json()})
+.then(function(d){
+O.innerHTML=
+'<div class="tag ok">'
++'✅ 审查完成</div><pre>'
++esc(d.choices[0]
+.message.content)
++'</pre>'})
+.catch(function(e){
+var h='';
+if(e instanceof TypeError)
+h='<div class="tip">'
++'网络失败：换网络重试；'
++'反复失败请截图发我</div>';
+O.innerHTML=
+'<div class="tag err">❌ '
++esc(e.message)
++'</div>'+h})
+.finally(function(){
+B.disabled=false;
+B.textContent='开始审查'})}
+</script>
+</body>
+</html>
