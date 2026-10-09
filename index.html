@@ -98,6 +98,15 @@ placeholder="粘贴代码到这里">
 var API='https://api.deepseek.com'
 +'/chat/completions';
 var MODEL='deepseek-v4-flash';
+function sGet(k){try{return
+localStorage.getItem(k)||''}
+catch(e){return''}}
+function sSet(k,v){try{
+localStorage.setItem(k,v)}
+catch(e){}}
+function sDel(k){try{
+localStorage.removeItem(k)}
+catch(e){}}
 var K=document
 .getElementById('key');
 var C=document
@@ -110,33 +119,32 @@ function esc(s){return s
 .replace(/&/g,'&amp;')
 .replace(/</g,'&lt;')
 .replace(/>/g,'&gt;')}
-K.value=localStorage
-.getItem('ds_key')||'';
+var boot=document
+.createElement('div');
+boot.className='tip';
+boot.textContent=
+'✅ 脚本已加载 v4，按钮正常';
+document.querySelector('.card')
+.appendChild(boot);
+K.value=sGet('ds_key');
 K.onchange=function(){
-localStorage.setItem(
-'ds_key',K.value.trim())};
-C.value=localStorage
-.getItem('ds_code')||'';
+sSet('ds_key',K.value.trim())};
+C.value=sGet('ds_code');
 C.oninput=function(){
-localStorage.setItem(
-'ds_code',C.value)};
-var last=localStorage
-.getItem('ds_result');
+sSet('ds_code',C.value)};
+var last=sGet('ds_result');
 if(last){
 O.innerHTML=
 '<div class="tag old">'
 +'📌 上次的审查结果（'
-+localStorage.getItem(
-'ds_time')+'）</div><pre>'
++sGet('ds_time')
++'）</div><pre>'
 +esc(last)+'</pre>'}
 document.getElementById('clr')
 .onclick=function(){
-localStorage.removeItem(
-'ds_code');
-localStorage.removeItem(
-'ds_result');
-localStorage.removeItem(
-'ds_time');
+sDel('ds_code');
+sDel('ds_result');
+sDel('ds_time');
 C.value='';O.innerHTML='';
 alert('已清空')};
 B.onclick=function(){
@@ -145,8 +153,7 @@ var code=C.value.trim();
 if(!key||!code){
 alert('先填 Key 并粘贴代码');
 return}
-localStorage.setItem(
-'ds_key',key);
+sSet('ds_key',key);
 B.disabled=true;
 B.textContent='审查中…';
 var sec=0;
@@ -208,16 +215,13 @@ var txt=d.choices[0]
 var now=new Date();
 var t=now.getHours()+':'
 +now.getMinutes();
-localStorage.setItem(
-'ds_code',code);
-localStorage.setItem(
-'ds_result',txt);
-localStorage.setItem(
-'ds_time',t);
+sSet('ds_code',code);
+sSet('ds_result',txt);
+sSet('ds_time',t);
 O.innerHTML=
 '<div class="tag ok">'
-+'✅ 审查完成（已保存，'
-+'刷新不丢）</div><pre>'
++'✅ 审查完成（已保存）'
++'</div><pre>'
 +esc(txt)+'</pre>'})
 .catch(function(e){
 var m=e.message;
