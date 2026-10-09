@@ -91,8 +91,7 @@ placeholder="粘贴代码到这里">
 <button id="clr" class="btn2">
 🗑 清空代码和结果</button>
 <div class="tip">约 10~30 秒出结果，
-代码和结果都存在你手机本地
-</div>
+60 秒没回音会自动报错</div>
 </div>
 <div id="out"></div>
 <script>
@@ -150,10 +149,23 @@ localStorage.setItem(
 'ds_key',key);
 B.disabled=true;
 B.textContent='审查中…';
+var sec=0;
+var ctrl=new AbortController();
+var tm=setTimeout(function(){
+ctrl.abort()},60000);
+var tk=setInterval(function(){
+sec=sec+1;
 O.innerHTML=
 '<div class="tag wait">'
-+'⏳ AI 正在阅读代码…</div>';
++'⏳ AI 正在阅读代码…'
++' 已等 '+sec+' 秒</div>'},
+1000);
+O.innerHTML=
+'<div class="tag wait">'
++'⏳ AI 正在阅读代码…'
++' 已等 0 秒</div>';
 fetch(API,{method:'POST',
+signal:ctrl.signal,
 headers:{
 'Content-Type':
 'application/json',
@@ -208,16 +220,22 @@ O.innerHTML=
 +'刷新不丢）</div><pre>'
 +esc(txt)+'</pre>'})
 .catch(function(e){
+var m=e.message;
+if(e.name=='AbortError'){
+m='超时(60秒)：请求没回来，'
++'多半是 VPN 没关或网络'
++'不通，关 VPN 后重试'}
 var h='';
 if(e instanceof TypeError)
 h='<div class="tip">'
-+'网络失败：换网络重试；'
++'网络失败：关 VPN 重试；'
 +'反复失败请截图发我</div>';
 O.innerHTML=
 '<div class="tag err">❌ '
-+esc(e.message)
-+'</div>'+h})
++esc(m)+'</div>'+h})
 .finally(function(){
+clearTimeout(tm);
+clearInterval(tk);
 B.disabled=false;
 B.textContent='开始审查'})}
 </script>
